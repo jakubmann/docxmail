@@ -1,4 +1,29 @@
+# coding=utf-8
+
+import sys
+import datetime
 from docx import Document
+
+# encoding=utf8
+reload(sys)
+sys.setdefaultencoding('UTF8')
+
+#Month
+now = datetime.datetime.now()
+months = {
+    1   :   "Leden",
+    2   :   "Únor",
+    3   :   "Březen",
+    4   :   "Duben",
+    5   :   "Květen",
+    6   :   "Červen",
+    7   :   "Červenec",
+    8   :   "Srpen",
+    9   :   "Září",
+    10  :   "Říjen",
+    11  :   "Listopad",
+    12  :   "Prosinec",
+}
 
 def format(filename, text, originalstring = "{\TEXT}"):
     with open(filename) as f:
@@ -6,7 +31,7 @@ def format(filename, text, originalstring = "{\TEXT}"):
     s = s.replace(originalstring, text)
     return s
 
-def inplace_change(filename, old_string, new_string):
+def inplace_change(filename, new_string, old_string):
     with open(filename) as f:
         s = f.read()
         if old_string not in s:
@@ -17,60 +42,99 @@ def inplace_change(filename, old_string, new_string):
         s = s.replace(old_string, new_string)
         f.write(s)
 
-document = Document('email.docx')
+#Aktualita
+class Article:
+    def __init__(self):
+        self.heading = ""
+        self.paragraphs = []
+        self.vice = ""
 
+    def addParagraph(self, paragraph):
+        self.paragraphs.append(paragraph)
+
+    def format(self):
+        paragraphs_text = ""
+        for paragraph in self.paragraphs:
+            if paragraph != "{terminy}":
+                paragraphs_text += format("template/paragraph.html", paragraph)
+        output = format("template/article.html", format("template/heading.html", self.heading) + paragraphs_text)
+        if self.vice != "":
+            output += format("template/vice.html", self.vice)
+        return output
+
+#Termin
+class Termin:
+    def __init__(self):
+        self.date = ""
+        self.text = ""
+        self.vice = ""
+    def format(self):
+        output = format("template/termin.html", self.text).replace("{\DATUM}", self.date)
+        if self.vice != "":
+            output = output.replace("{\VICE}", format("template/vice_termin.html", self.vice))
+        return output.replace("{\VICE}", "")
+
+
+#Open files
+document = Document('email.docx')
 f = open("email.html", "w+")
 
-
-#articles
+#Article Loop
 articles = []
-count = 0
-heading_text = ""
-paragraph_text = ""
-vice_text = ""
-terminy = False
-terminy_text = ""
+terminy = []
+isTermin = False
 for p in document.paragraphs:
-    if not terminy:
+    #Aktuality
+    if not isTermin:
         if p.style.name == "Heading 1":
-            heading_text += (format("template/heading.html", p.text)) + "\n"
+            articles.append(Article())
+            articles[len(articles)-1].heading = p.text
+
         elif p.style.name == "Normal":
             if "{vice}" in p.text:
-                vice_text += (format("template/vice.html", p.text.replace("{vice}", ""))) + "\n"
-            elif "{terminy}" in p.text:
-                terminy = True
+                articles[len(articles)-1].vice = p.text.replace("{vice}", "")
             else:
-                paragraph_text += (format("template/paragraph.html", p.text)) + "\n"
-
-        if heading_text != "" and paragraph_text != "":
-            output = heading_text + paragraph_text
-            if vice_text != "":
-                output += vice_text
-                vice_text = ""
-            articles.append(format("template/article.html", output))
-            count += 1
-            heading_text = ""
-            paragraph_text = ""
+                articles[len(articles)-1].addParagraph(p.text)
+    #Terminy
     else:
-        terminy_text += p.text
+        if p.style.name == "Normal":
+            if "{vice}" in p.text:
+                terminy[len(terminy)-1].vice = p.text.replace("{vice}", "")
+            else:
+                termin = p.text.split(" ")
+                terminy.append(Termin())
+                terminy[len(terminy)-1].date = termin[0]
+                for text in termin[1:]:
+                    terminy[len(terminy)-1].text += " " + text
+    if p.text == "{terminy}":
+        isTermin = True
 
-if count % 2 == 0:
-    first = ""
-    second = ""
-    for i in range(int(len(articles)/2)):
-        first += articles[i]
-    for i in range(int(len(articles)/2), len(articles)):
-        second += articles[i]
+#Output
+output_terminy = ""
+for termin in terminy:
+    output_terminy += termin.format()
+
+
+if len(articles) % 2 == 0:
+    first = articles[:int(len(articles)/2)]
+    second = articles[int(len(articles)/2):len(articles)]
+
 else:
-    first = ""
-    second = ""
-    for i in range(int(len(articles)/2+1)):
-        first += articles[i]
-    for i in range(int(len(articles)/2+1), len(articles)):
-        second += articles[i]
+    first = articles[:int(len(articles)/2+1)]
+    second = articles[int(len(articles)/2+1):len(articles)]
 
-f.write(format("template/main.html", first, "{\MAIN_FIRST}"))
-inplace_change("email.html", "{\MAIN_SECOND}", second)
-inplace_change("email.html", "{\TERMINY}", terminy_text)
+body = ""
+output_first = ""
+output_second = ""
+for article in first:
+    output_first += article.format()
+for article in second:
+    output_second += article.format()
 
+body = format("template/main.html", output_first, "{MAIN_FIRST}").replace("{TERMINY}", output_terminy)
+f.write(body
+            .replace("{MAIN_SECOND}", output_second)
+            .replace("{MONTH}", months[now.month])
+            .replace("{YEAR}", str(now.year))
+        )
 f.close()
