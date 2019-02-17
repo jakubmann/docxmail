@@ -1,12 +1,7 @@
 # coding=utf-8
-
-import sys
 import datetime
 from docx import Document
 
-# encoding=utf8
-reload(sys)
-sys.setdefaultencoding('UTF8')
 
 #Month
 now = datetime.datetime.now()
@@ -26,7 +21,7 @@ months = {
 }
 
 def format(filename, text, originalstring = "{\TEXT}"):
-    with open(filename) as f:
+    with open(filename, encoding='utf-8') as f:
         s = f.read()
     s = s.replace(originalstring, text)
     return s
@@ -77,7 +72,7 @@ class Termin:
 
 #Open files
 document = Document('email.docx')
-f = open("email.html", "w+")
+f = open("email.html", "w+", encoding="utf-8")
 
 #Article Loop
 articles = []
