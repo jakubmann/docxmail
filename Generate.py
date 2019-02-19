@@ -43,22 +43,22 @@ def generate(input_file, output_file):
                 articles[len(articles)-1].heading = p.text
 
             elif p.style.name == "Normal":
-                if "{vice}" in p.text:
-                    articles[len(articles)-1].vice = p.text.replace("{vice}", "")
+                if "<vice>" in p.text:
+                    articles[len(articles)-1].vice = p.text.replace("<vice>", "")
                 else:
                     articles[len(articles)-1].addParagraph(p.text)
         #Terminy
         else:
             if p.style.name == "Normal":
-                if "{vice}" in p.text:
-                    terminy[len(terminy)-1].vice = p.text.replace("{vice}", "")
+                if "<vice>" in p.text:
+                    terminy[len(terminy)-1].vice = p.text.replace("<vice>", "")
                 else:
                     termin = p.text.split(" ")
                     terminy.append(Termin())
                     terminy[len(terminy)-1].date = termin[0]
                     for text in termin[1:]:
                         terminy[len(terminy)-1].text += " " + text
-        if p.text == "{terminy}":
+        if p.text == "<terminy>":
             isTermin = True
 
     #Output

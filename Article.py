@@ -12,7 +12,7 @@ class Article:
     def format(self):
         paragraphs_text = ""
         for paragraph in self.paragraphs:
-            if paragraph != "{terminy}":
+            if paragraph != "<terminy>":
                 paragraphs_text += format("template/paragraph.html", paragraph)
         output = format("template/article.html", format("template/heading.html", self.heading) + paragraphs_text)
         if self.vice != "":
