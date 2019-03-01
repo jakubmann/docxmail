@@ -5,6 +5,7 @@ class Article:
         self.heading = ""
         self.paragraphs = []
         self.vice = ""
+        self.img = ""
 
     def addParagraph(self, paragraph):
         self.paragraphs.append(paragraph)
@@ -17,4 +18,6 @@ class Article:
         output = format("template/article.html", format("template/heading.html", self.heading) + paragraphs_text)
         if self.vice != "":
             output += format("template/vice.html", self.vice)
+        if self.img != "":
+            output += format("template/image.html", self.img, "{\IMG}")
         return output

@@ -45,6 +45,8 @@ def generate(input_file, output_file):
             elif p.style.name == "Normal":
                 if "<vice>" in p.text:
                     articles[len(articles)-1].vice = p.text.replace("<vice>", "")
+                elif "<img>" in p.text:
+                    articles[len(articles)-1].img = p.text.replace("<img>", "")
                 else:
                     articles[len(articles)-1].addParagraph(p.text)
         #Terminy
